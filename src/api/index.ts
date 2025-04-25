@@ -72,6 +72,25 @@ export const api = {
       console.log("Verify OTP API response:", data);
       return data;
     },
+
+    // Inside api.auth
+    logout: async () => {
+      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        credentials: "include", // include cookies if needed
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Logout failed");
+      }
+
+      return response.json();
+    },
   },
 
   // Products related endpoints

@@ -1,12 +1,11 @@
-"use client";
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ShoppingCart, User, Menu, X, Heart, Search } from "react-feather";
+import { api } from "../api";
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout: contextLogout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -16,6 +15,18 @@ export default function Navbar() {
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+  };
+
+  // Function to call the logout API
+  const logout = async () => {
+    try {
+      await api.auth.logout();
+      localStorage.removeItem("accessToken");
+      logout(); // Your AuthContext logout
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (

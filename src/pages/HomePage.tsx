@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 import Footer from "../components/Footer";
 import { useState, useEffect, useRef } from "react";
@@ -10,12 +8,12 @@ import Navbar from "../components/Navbar";
 import {
   ChevronLeft,
   ChevronRight,
-  Star,
   ShoppingBag,
   Heart,
   Search,
   ArrowRight,
 } from "react-feather";
+import { Star, StarHalf, Star as StarEmpty } from "lucide-react";
 
 type Product = {
   id: string;
@@ -24,7 +22,7 @@ type Product = {
   image?: string;
   averageRating?: number;
   createdAt: string;
-  price?: number; // Added price field
+  price?: number;
 };
 
 type Category = {
@@ -56,36 +54,23 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Default placeholder images for categories
-  const categoryImages = {
-    food: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80",
-    pc: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1742&q=80",
-    laptop:
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1742&q=80",
-    default:
-      "https://images.unsplash.com/photo-1472851294608-062f824d29cc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80",
-  };
-
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, []);
 
   useEffect(() => {
-    // Auto-advance carousel every 5 seconds
     const interval = setInterval(() => {
       if (featuredProducts.length > 0) {
         setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
       }
     }, 5000);
-
     return () => clearInterval(interval);
   }, [featuredProducts]);
 
   const fetchProducts = async () => {
     setIsLoading(true);
     setError(null);
-
     try {
       const data = await api.products.getFeatured({
         page: 0,
@@ -93,20 +78,15 @@ export default function HomePage() {
         sort: "createOn",
       });
 
-      // Ensure we have products for the carousel
       if (data.content.length > 0) {
-        // Set featured products (first 5 or all if less than 5)
         setFeaturedProducts(
           data.content.slice(0, Math.min(5, data.content.length))
         );
-
-        // Set popular products (sort by rating and take top 8)
         const sorted = [...data.content].sort(
           (a, b) => (b.averageRating || 0) - (a.averageRating || 0)
         );
         setPopularProducts(sorted.slice(0, 8));
       } else {
-        // If no products, set empty arrays
         setFeaturedProducts([]);
         setPopularProducts([]);
       }
@@ -120,7 +100,6 @@ export default function HomePage() {
 
   const fetchCategories = async () => {
     setIsLoadingCategories(true);
-
     try {
       const response = await api.categories.getAll({
         page: 0,
@@ -130,7 +109,6 @@ export default function HomePage() {
       setCategories(response.content);
     } catch (err) {
       console.error("Failed to load categories:", err);
-      // Don't show error for categories, just log it
     } finally {
       setIsLoadingCategories(false);
     }
@@ -148,41 +126,46 @@ export default function HomePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Navigate to search results page or filter in-place
     console.log("Searching for:", searchQuery);
   };
 
-  const renderStars = (rating = 0) => {
-    return (
-      <div className="flex">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            size={16}
-            className={`${
-              star <= rating
-                ? "text-yellow-400 fill-yellow-400"
-                : "text-gray-300"
-            }`}
-          />
-        ))}
-      </div>
-    );
+  const getStarIcon = (averageRating: number, starIndex: number) => {
+    if (averageRating >= starIndex) {
+      return "full";
+    } else if (averageRating >= starIndex - 0.5) {
+      return "half";
+    } else {
+      return "empty";
+    }
   };
 
-  const getCategoryImage = (categoryName: string) => {
-    const name = categoryName.toLowerCase();
-    return (
-      categoryImages[name as keyof typeof categoryImages] ||
-      categoryImages.default
-    );
+  const renderStar = (type: "full" | "half" | "empty", key: number) => {
+    const baseClass = "w-5 h-5"; // or w-6 h-6 if you prefer
+    switch (type) {
+      case "full":
+        return (
+          <Star
+            key={key}
+            className={`${baseClass} fill-yellow-400 text-yellow-400`}
+          />
+        );
+      case "half":
+        return (
+          <StarHalf
+            key={key}
+            className={`${baseClass} fill-yellow-400 text-yellow-400`}
+          />
+        );
+      case "empty":
+        return <StarEmpty key={key} className={`${baseClass} text-gray-300`} />;
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
 
-      {/* Search Bar Section - Moved above the carousel */}
+      {/* Search Bar */}
       <section className="bg-indigo-600 py-8">
         <div className="container mx-auto px-4">
           <form onSubmit={handleSearch} className="max-w-3xl mx-auto flex">
@@ -238,7 +221,17 @@ export default function HomePage() {
                           </h1>
                           <p className="text-lg mb-6">{product.description}</p>
                           <div className="flex items-center mb-6">
-                            {renderStars(product.averageRating || 0)}
+                            {[1, 2, 3, 4, 5].map((star) =>
+                              renderStar(
+                                getStarIcon(
+                                  product.averageRating === undefined
+                                    ? 0
+                                    : product.averageRating,
+                                  star
+                                ),
+                                star
+                              )
+                            )}
                             <span className="ml-2 text-sm">
                               {product.averageRating
                                 ? product.averageRating.toFixed(1)
@@ -313,14 +306,16 @@ export default function HomePage() {
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="flex flex-col items-center justify-center p-6 rounded-xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition"
+                  className="flex flex-col items-center justify-between h-48 p-6 rounded-xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition"
                 >
-                  <div className="text-indigo-700 text-2xl font-semibold mb-2 capitalize">
-                    {category.name}
+                  <div className="text-center">
+                    <div className="text-indigo-700 text-xl font-semibold mb-2 capitalize truncate">
+                      {category.name}
+                    </div>
+                    <p className="text-gray-600 text-sm line-clamp-3">
+                      {category.description}
+                    </p>
                   </div>
-                  <p className="text-gray-600 text-sm text-center">
-                    {category.description}
-                  </p>
                 </div>
               ))}
             </div>
@@ -338,7 +333,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold">Popular Products</h2>
             <Link
-              to="/"
+              to="/products"
               className="text-indigo-600 hover:text-indigo-800 flex items-center"
             >
               View all <ArrowRight size={16} className="ml-1" />
@@ -375,7 +370,17 @@ export default function HomePage() {
                       {product.name}
                     </h3>
                     <div className="flex items-center mb-2">
-                      {renderStars(product.averageRating || 0)}
+                      {[1, 2, 3, 4, 5].map((star) =>
+                        renderStar(
+                          getStarIcon(
+                            product.averageRating === undefined
+                              ? 0
+                              : product.averageRating,
+                            star
+                          ),
+                          star
+                        )
+                      )}
                       <span className="ml-1 text-xs text-gray-600">
                         (
                         {product.averageRating
