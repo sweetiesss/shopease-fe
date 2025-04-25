@@ -1,86 +1,246 @@
 "use client";
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ShoppingCart, User, Menu, X, Heart, Search } from "react-feather";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const toggleSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
+  };
 
   return (
-    <header className="bg-white shadow">
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      {/* Top Bar */}
+      <div className="bg-indigo-600 text-white py-2 text-center text-sm">
+        Free shipping on all orders over $50 | Use code WELCOME20 for 20% off
+        your first order
+      </div>
+
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="text-xl font-bold text-gray-900">
-            Shopease
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="text-2xl font-bold text-indigo-600">
+            ShopEase
           </Link>
 
-          <nav className="flex items-center gap-6">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              className="text-sm font-medium hover:text-indigo-600 transition-colors"
+            >
+              Home
+            </Link>
             <Link
               to="/products"
-              className="text-sm font-medium text-gray-700 hover:text-gray-900"
+              className="text-sm font-medium hover:text-indigo-600 transition-colors"
             >
               Products
             </Link>
+            <Link
+              to="/categories"
+              className="text-sm font-medium hover:text-indigo-600 transition-colors"
+            >
+              Categories
+            </Link>
+            <Link
+              to="/about"
+              className="text-sm font-medium hover:text-indigo-600 transition-colors"
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className="text-sm font-medium hover:text-indigo-600 transition-colors"
+            >
+              Contact
+            </Link>
+          </nav>
 
-            {isAuthenticated && user?.role === "ADMIN" && (
-              <Link
-                to="/admin"
-                className="text-sm font-medium text-gray-700 hover:text-gray-900"
-              >
-                Admin Dashboard
-              </Link>
-            )}
+          {/* Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Search Button */}
+            <button
+              onClick={toggleSearch}
+              className="p-2 text-gray-600 hover:text-indigo-600 transition-colors"
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
 
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              className="p-2 text-gray-600 hover:text-indigo-600 transition-colors"
+            >
+              <Heart size={20} />
+            </Link>
+
+            {/* Cart */}
+            <Link
+              to="/cart"
+              className="p-2 text-gray-600 hover:text-indigo-600 transition-colors relative"
+            >
+              <ShoppingCart size={20} />
+              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                3
+              </span>
+            </Link>
+
+            {/* User Menu */}
             {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span className="text-sm text-gray-700">{user?.email}</span>
-                </div>
-                <button
-                  onClick={logout}
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                  title="Logout"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
+              <div className="relative group">
+                <button className="flex items-center space-x-1 p-2 text-gray-600 hover:text-indigo-600 transition-colors">
+                  <User size={20} />
+                  <span className="text-sm hidden lg:inline-block">
+                    {user?.email}
+                  </span>
                 </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
+                  <Link
+                    to="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    to="/orders"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Orders
+                  </Link>
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={logout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             ) : (
               <Link
                 to="/login"
-                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                className="inline-flex items-center text-sm font-medium bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
               >
                 Login
               </Link>
             )}
-          </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={toggleMenu}
+              className="p-2 rounded-md text-gray-600 md:hidden"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 border-t">
+            <nav className="flex flex-col space-y-4">
+              <Link
+                to="/"
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                to="/products"
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                Products
+              </Link>
+              <Link
+                to="/categories"
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                Categories
+              </Link>
+              <Link
+                to="/about"
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                Contact
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/profile"
+                    className="text-gray-600 hover:text-indigo-600 transition-colors"
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    to="/orders"
+                    className="text-gray-600 hover:text-indigo-600 transition-colors"
+                  >
+                    Orders
+                  </Link>
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      to="/admin"
+                      className="text-gray-600 hover:text-indigo-600 transition-colors"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={logout}
+                    className="text-left text-gray-600 hover:text-indigo-600 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
+            </nav>
+          </div>
+        )}
+
+        {/* Search Bar */}
+        {isSearchOpen && (
+          <div className="py-4 border-t">
+            <form className="flex">
+              <input
+                type="text"
+                placeholder="Search for products..."
+                className="flex-grow px-4 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 transition-colors"
+              >
+                Search
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </header>
   );

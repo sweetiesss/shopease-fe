@@ -124,4 +124,17 @@ export const api = {
         body: JSON.stringify(ratingData),
       }),
   },
+
+  // Categories related endpoints
+  categories: {
+    getAll: ({
+      page,
+      size,
+      sort,
+    }: {
+      page: number;
+      size: number;
+      sort: string;
+    }) => fetchWithAuth(`/categories?page=${page}&size=${size}&sort=${sort}`),
+  },
 };
