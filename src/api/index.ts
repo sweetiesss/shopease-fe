@@ -73,7 +73,6 @@ export const api = {
       return data;
     },
 
-    // Inside api.auth
     logout: async () => {
       const response = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: "POST",
@@ -83,13 +82,29 @@ export const api = {
         },
         credentials: "include", // include cookies if needed
       });
-
+      console.log("Access token:", getAuthToken());
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Logout failed");
       }
 
       return response.json();
+    },
+
+    // inside api.auth
+    refreshToken: async () => {
+      console.log("Refreshing token...");
+      const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // send cookie
+      });
+
+      const data = await response.json();
+      console.log("Refresh token API response:", data);
+      return data;
     },
   },
 
@@ -99,24 +114,44 @@ export const api = {
       page,
       size,
       sort,
+      search = "",
     }: {
       page: number;
       size: number;
       sort: string;
-    }) => fetchWithAuth(`/products?page=${page}&size=${size}&sort=${sort}`),
+      search?: string; // <--- add search here
+    }) =>
+      fetchWithAuth(
+        `/products?page=${page}&size=${size}&sort=${sort}&search=${encodeURIComponent(
+          search
+        )}`
+      ),
     getById: (id: string) => fetchWithAuth(`/products/${id}`),
-    create: (productData: any) =>
-      fetchWithAuth("/products", {
+    create: (productData: {
+      name: string;
+      description: string;
+      price: number;
+      featured: boolean;
+    }) =>
+      fetchWithAuth("/products/admin", {
         method: "POST",
         body: JSON.stringify(productData),
       }),
-    update: (id: string, productData: any) =>
-      fetchWithAuth(`/products/${id}`, {
+    updateAdmin: (
+      id: string,
+      productData: {
+        name: string;
+        description: string;
+        price: number;
+        featured: boolean;
+      }
+    ) =>
+      fetchWithAuth(`/products/admin/${id}`, {
         method: "PUT",
         body: JSON.stringify(productData),
       }),
-    delete: (id: string) =>
-      fetchWithAuth(`/products/${id}`, {
+    deleteAdmin: (id: string) =>
+      fetchWithAuth(`/products/admin/${id}`, {
         method: "DELETE",
       }),
     getFeatured: ({
@@ -131,8 +166,16 @@ export const api = {
       fetchWithAuth(
         `/products/featured?page=${page}&size=${size}&sort=${sort}`
       ),
+    getByCategory: (
+      categoryId: number,
+      { page, size, sort }: { page: number; size: number; sort: string }
+    ) =>
+      fetchWithAuth(
+        `/product-categories/products-by-category/${categoryId}?pageNo=${page}&pageSize=${size}&sort=${sort}`
+      ),
   },
 
+  // Ratings related endpoints
   // Ratings related endpoints
   ratings: {
     getByProductId: (productId: string) =>
@@ -141,6 +184,18 @@ export const api = {
       fetchWithAuth("/ratings", {
         method: "POST",
         body: JSON.stringify(ratingData),
+      }),
+    update: (
+      ratingId: number,
+      ratingData: { point: number; description: string }
+    ) =>
+      fetchWithAuth(`/ratings/${ratingId}`, {
+        method: "PUT",
+        body: JSON.stringify(ratingData),
+      }),
+    delete: (ratingId: number) =>
+      fetchWithAuth(`/ratings/${ratingId}`, {
+        method: "DELETE",
       }),
   },
 
@@ -155,5 +210,7 @@ export const api = {
       size: number;
       sort: string;
     }) => fetchWithAuth(`/categories?page=${page}&size=${size}&sort=${sort}`),
+    getByProductId: (productId: string) =>
+      fetchWithAuth(`/product-categories/${productId}`),
   },
 };

@@ -1,19 +1,13 @@
-import type React from "react";
 import Footer from "../components/Footer";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import Navbar from "../components/Navbar";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ShoppingBag,
-  Heart,
-  Search,
-  ArrowRight,
-} from "react-feather";
+import { ChevronLeft, ChevronRight, Search, ArrowRight } from "react-feather";
 import { Star, StarHalf, Star as StarEmpty } from "lucide-react";
+import ProductCard from "../components/ProductCard";
+import { useNavigate } from "react-router-dom";
+import StarRating from "../components/StarRating";
 
 type Product = {
   id: string;
@@ -23,6 +17,7 @@ type Product = {
   averageRating?: number;
   createdAt: string;
   price?: number;
+  featured: boolean;
 };
 
 type Category = {
@@ -42,8 +37,6 @@ type CategoryResponse = {
 };
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,8 +44,8 @@ export default function HomePage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
   const carouselRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
@@ -124,73 +117,13 @@ export default function HomePage() {
     setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Searching for:", searchQuery);
+  const handleCategoryClick = (categoryId: number) => {
+    // Redirect to ProductPage with the selected category ID as a query parameter
+    navigate(`/products?category=${categoryId}`);
   };
-
-  const getStarIcon = (averageRating: number, starIndex: number) => {
-    if (averageRating >= starIndex) {
-      return "full";
-    } else if (averageRating >= starIndex - 0.5) {
-      return "half";
-    } else {
-      return "empty";
-    }
-  };
-
-  const renderStar = (type: "full" | "half" | "empty", key: number) => {
-    const baseClass = "w-5 h-5"; // or w-6 h-6 if you prefer
-    switch (type) {
-      case "full":
-        return (
-          <Star
-            key={key}
-            className={`${baseClass} fill-yellow-400 text-yellow-400`}
-          />
-        );
-      case "half":
-        return (
-          <StarHalf
-            key={key}
-            className={`${baseClass} fill-yellow-400 text-yellow-400`}
-          />
-        );
-      case "empty":
-        return <StarEmpty key={key} className={`${baseClass} text-gray-300`} />;
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-
-      {/* Search Bar */}
-      <section className="bg-indigo-600 py-8">
-        <div className="container mx-auto px-4">
-          <form onSubmit={handleSearch} className="max-w-3xl mx-auto flex">
-            <div className="relative flex-grow">
-              <input
-                type="text"
-                placeholder="Search for products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full py-3 px-4 pr-12 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
-              />
-              <Search
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-indigo-800 text-white px-6 py-3 rounded-r-md hover:bg-indigo-900 transition-colors"
-            >
-              Search
-            </button>
-          </form>
-        </div>
-      </section>
 
       {/* Hero Section with Carousel */}
       <section className="relative bg-white">
@@ -221,17 +154,7 @@ export default function HomePage() {
                           </h1>
                           <p className="text-lg mb-6">{product.description}</p>
                           <div className="flex items-center mb-6">
-                            {[1, 2, 3, 4, 5].map((star) =>
-                              renderStar(
-                                getStarIcon(
-                                  product.averageRating === undefined
-                                    ? 0
-                                    : product.averageRating,
-                                  star
-                                ),
-                                star
-                              )
-                            )}
+                            <StarRating rating={product.averageRating || 0} />
                             <span className="ml-2 text-sm">
                               {product.averageRating
                                 ? product.averageRating.toFixed(1)
@@ -306,7 +229,8 @@ export default function HomePage() {
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="flex flex-col items-center justify-between h-48 p-6 rounded-xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition"
+                  onClick={() => handleCategoryClick(category.id)} // Handle category click
+                  className="flex flex-col items-center justify-between h-48 p-6 rounded-xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition cursor-pointer"
                 >
                   <div className="text-center">
                     <div className="text-indigo-700 text-xl font-semibold mb-2 capitalize truncate">
@@ -331,7 +255,7 @@ export default function HomePage() {
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Popular Products</h2>
+            <h2 className="text-3xl font-bold">Featured Products</h2>
             <Link
               to="/products"
               className="text-indigo-600 hover:text-indigo-800 flex items-center"
@@ -351,60 +275,11 @@ export default function HomePage() {
           ) : popularProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {popularProducts.map((product) => (
-                <div
+                <ProductCard
                   key={product.id}
-                  className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <div className="relative">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-48 object-cover"
-                    />
-                    <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md hover:bg-gray-100">
-                      <Heart size={18} className="text-gray-600" />
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-1 line-clamp-1">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center mb-2">
-                      {[1, 2, 3, 4, 5].map((star) =>
-                        renderStar(
-                          getStarIcon(
-                            product.averageRating === undefined
-                              ? 0
-                              : product.averageRating,
-                            star
-                          ),
-                          star
-                        )
-                      )}
-                      <span className="ml-1 text-xs text-gray-600">
-                        (
-                        {product.averageRating
-                          ? product.averageRating.toFixed(1)
-                          : "0"}
-                        )
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {product.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-lg">
-                        ${product.price?.toFixed(2)}
-                      </span>
-                      <Link
-                        to={`/product/${product.id}`}
-                        className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 transition-colors"
-                      >
-                        <ShoppingBag size={18} />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
+                  product={product}
+                  onUpdate={fetchProducts} // Pass fetchProducts as the callback
+                />
               ))}
             </div>
           ) : (

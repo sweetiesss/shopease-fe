@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ShoppingCart, User, Menu, X, Heart, Search } from "react-feather";
@@ -8,6 +8,10 @@ export default function Navbar() {
   const { user, isAuthenticated, logout: contextLogout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State to control dropdown visibility
+  const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  ); // Timeout for dropdown
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -17,26 +21,32 @@ export default function Navbar() {
     setIsSearchOpen(!isSearchOpen);
   };
 
-  // Function to call the logout API
   const logout = async () => {
     try {
       await api.auth.logout();
-      localStorage.removeItem("accessToken");
-      logout(); // Your AuthContext logout
+      contextLogout();
       window.location.href = "/login";
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
 
+  const handleMouseEnter = () => {
+    if (dropdownTimeout) {
+      clearTimeout(dropdownTimeout); // Clear any existing timeout
+    }
+    setIsDropdownOpen(true); // Show the dropdown
+  };
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setIsDropdownOpen(false); // Hide the dropdown after a delay
+    }, 200); // Adjust the delay as needed (200ms in this case)
+    setDropdownTimeout(timeout);
+  };
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className="bg-indigo-600 text-white py-2 text-center text-sm">
-        Free shipping on all orders over $50 | Use code WELCOME20 for 20% off
-        your first order
-      </div>
-
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -110,41 +120,47 @@ export default function Navbar() {
 
             {/* User Menu */}
             {isAuthenticated ? (
-              <div className="relative group">
+              <div
+                className="relative"
+                onMouseEnter={handleMouseEnter} // Show dropdown on hover
+                onMouseLeave={handleMouseLeave} // Hide dropdown after a delay
+              >
                 <button className="flex items-center space-x-1 p-2 text-gray-600 hover:text-indigo-600 transition-colors">
                   <User size={20} />
                   <span className="text-sm hidden lg:inline-block">
                     {user?.email}
                   </span>
                 </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    to="/orders"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Orders
-                  </Link>
-                  {user?.role === "ADMIN" && (
+                {isDropdownOpen && ( // Show dropdown if isDropdownOpen is true
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
                     <Link
-                      to="/admin"
+                      to="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Admin Dashboard
+                      Profile
                     </Link>
-                  )}
-                  <button
-                    onClick={logout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
+                    <Link
+                      to="/orders"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Orders
+                    </Link>
+                    {user?.role === "ADMIN" && (
+                      <Link
+                        to="/admin"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={logout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link
@@ -165,93 +181,6 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <nav className="flex flex-col space-y-4">
-              <Link
-                to="/"
-                className="text-gray-600 hover:text-indigo-600 transition-colors"
-              >
-                Home
-              </Link>
-              <Link
-                to="/products"
-                className="text-gray-600 hover:text-indigo-600 transition-colors"
-              >
-                Products
-              </Link>
-              <Link
-                to="/categories"
-                className="text-gray-600 hover:text-indigo-600 transition-colors"
-              >
-                Categories
-              </Link>
-              <Link
-                to="/about"
-                className="text-gray-600 hover:text-indigo-600 transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                to="/contact"
-                className="text-gray-600 hover:text-indigo-600 transition-colors"
-              >
-                Contact
-              </Link>
-              {isAuthenticated && (
-                <>
-                  <Link
-                    to="/profile"
-                    className="text-gray-600 hover:text-indigo-600 transition-colors"
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    to="/orders"
-                    className="text-gray-600 hover:text-indigo-600 transition-colors"
-                  >
-                    Orders
-                  </Link>
-                  {user?.role === "ADMIN" && (
-                    <Link
-                      to="/admin"
-                      className="text-gray-600 hover:text-indigo-600 transition-colors"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  <button
-                    onClick={logout}
-                    className="text-left text-gray-600 hover:text-indigo-600 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-        )}
-
-        {/* Search Bar */}
-        {isSearchOpen && (
-          <div className="py-4 border-t">
-            <form className="flex">
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="flex-grow px-4 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <button
-                type="submit"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 transition-colors"
-              >
-                Search
-              </button>
-            </form>
-          </div>
-        )}
       </div>
     </header>
   );

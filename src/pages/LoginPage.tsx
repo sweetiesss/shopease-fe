@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 import { useState } from "react";
@@ -20,10 +18,8 @@ export default function LoginPage() {
 
     try {
       const response = await api.auth.login(email, password);
-      console.log("Login response:", response); // Add this for debugging
 
       if (response.statusCode === 200) {
-        // Navigate to verify page with email
         navigate(`/verify?email=${encodeURIComponent(email)}`);
       } else {
         setError(

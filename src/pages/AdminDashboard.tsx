@@ -82,20 +82,6 @@ export default function AdminDashboard() {
     setSubmitSuccess(false);
 
     try {
-      const productData = {
-        name,
-        description,
-        imageUrl: imageUrl || undefined,
-      };
-
-      if (editingProduct) {
-        // Update existing product
-        await api.products.update(editingProduct.id, productData);
-      } else {
-        // Create new product
-        await api.products.create(productData);
-      }
-
       // Reset form
       resetForm();
       setEditingProduct(null);
@@ -129,15 +115,6 @@ export default function AdminDashboard() {
       setDeleteConfirm(productId);
       return;
     }
-
-    // try {
-    //   await api.products.delete(productId);
-    //   setDeleteConfirm(null);
-    //   fetchProducts();
-    // } catch (err) {
-    //   console.error("Failed to delete product:", err);
-    //   setError("Failed to delete product");
-    // }
   };
 
   return (
